@@ -18,5 +18,10 @@
     "icon": "PhotoVideo",
     "name": "图片api",
     "link": "https://api.gengbo.top/api/images"
+  },
+  {
+    "icon": "CommentAlt",
+    "name": "一言api",
+    "link": "https://api.gengbo.top/hitokoto-api"
   }
 ]

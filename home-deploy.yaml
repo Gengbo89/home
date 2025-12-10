@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: home
-        image: registry.gengbo.top/home:v20251205001
+        image: registry.gengbo.top/home:v20251210001
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 12445
