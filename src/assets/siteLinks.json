@@ -10,6 +10,11 @@
     "link": "https://n8n.gengbo.top/"
   },
   {
+    "icon": "Cloud",
+    "name": "对象存储",
+    "link": "https://rustfs.gengbo.top/"
+  },
+  {
     "icon": "CompactDisc",
     "name": "音乐api",
     "link": "https://api.gengbo.top/meting-api/api?type=playlist&id=942786593"

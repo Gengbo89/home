@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: home
-        image: registry.gengbo.top/home:v20251210001
+        image: registry.gengbo.top/home:v20251211001
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 12445
@@ -40,8 +40,9 @@ kind: Ingress
 metadata:
   name: home
   namespace: dev
-#  annotations:
-#    nginx.ingress.kubernetes.io/use-regex: "true"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
   tls:
