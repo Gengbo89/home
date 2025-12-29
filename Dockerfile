@@ -13,5 +13,5 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 RUN npm install -g http-server
 
-EXPOSE 12445
-CMD ["http-server", "dist", "-p", "12445"]
+EXPOSE 80
+CMD ["http-server", "dist", "-p", "80"]

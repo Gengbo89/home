@@ -18,7 +18,7 @@ spec:
         image: registry.gengbo.top/home:v20251212002
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 12445
+        - containerPort: 80
 
 ---
 apiVersion: v1
@@ -32,7 +32,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 12445
+      targetPort: 80
 
 ---
 apiVersion: networking.k8s.io/v1
@@ -60,4 +60,3 @@ spec:
             name: home
             port:
               number: 80
-
