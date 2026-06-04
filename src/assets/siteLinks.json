@@ -15,6 +15,21 @@
     "link": "https://rustfs.gengbo.top/"
   },
   {
+    "icon": "CloudMonitoring",
+    "name": "监控",
+    "link": "https://monitor.gengbo.top"
+  },
+  {
+    "icon": "Notebook",
+    "name": "笔记",
+    "link": "https://note.gengbo.top"
+  },
+  {
+    "icon": "Document",
+    "name": "文档",
+    "link": "https://docs.gengbo.top"
+  },
+  {
     "icon": "CompactDisc",
     "name": "音乐api",
     "link": "https://api.gengbo.top/meting-api/api?type=playlist&id=942786593"
