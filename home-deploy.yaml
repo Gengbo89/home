@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: home
-        image: gengbo/home:20260604001
+        image: gengbo/home:v20260604002
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
