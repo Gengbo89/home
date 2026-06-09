@@ -1,0 +1,81 @@
+name: Build and Push Image
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  IMAGE: crpi-p67sy5t6k9nsmste.cn-hangzhou.personal.cr.aliyuncs.com/gengbo/home
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+
+      # 根据 Secrets 生成 .env
+      - name: Generate .env
+        run: |
+          cat > .env <<'EOF'
+          # 站点信息
+          VITE_SITE_NAME="${{ secrets.VITE_SITE_NAME }}"
+          VITE_SITE_AUTHOR="${{ secrets.VITE_SITE_AUTHOR }}"
+          VITE_SITE_KEYWORDS="${{ secrets.VITE_SITE_KEYWORDS }}"
+          VITE_SITE_DES="${{ secrets.VITE_SITE_DES }}"
+          VITE_SITE_URL="${{ secrets.VITE_SITE_URL }}"
+          VITE_SITE_LOGO="${{ secrets.VITE_SITE_LOGO }}"
+          VITE_SITE_MAIN_LOGO="${{ secrets.VITE_SITE_MAIN_LOGO }}"
+          VITE_SITE_APPLE_LOGO="${{ secrets.VITE_SITE_APPLE_LOGO }}"
+
+          # 简介
+          VITE_DESC_HELLO="${{ secrets.VITE_DESC_HELLO }}"
+          VITE_DESC_TEXT="${{ secrets.VITE_DESC_TEXT }}"
+          VITE_DESC_HELLO_OTHER="${{ secrets.VITE_DESC_HELLO_OTHER }}"
+          VITE_DESC_TEXT_OTHER="${{ secrets.VITE_DESC_TEXT_OTHER }}"
+
+          # 天气
+          VITE_WEATHER_KEY="${{ secrets.VITE_WEATHER_KEY }}"
+
+          # 建站日期
+          VITE_SITE_START="${{ secrets.VITE_SITE_START }}"
+
+          # ICP
+          VITE_SITE_ICP="${{ secrets.VITE_SITE_ICP }}"
+
+          # 歌曲
+          VITE_SONG_API="${{ secrets.VITE_SONG_API }}"
+          VITE_SONG_SERVER="${{ secrets.VITE_SONG_SERVER }}"
+          VITE_SONG_TYPE="${{ secrets.VITE_SONG_TYPE }}"
+          VITE_SONG_ID="${{ secrets.VITE_SONG_ID }}"
+          EOF
+
+
+      - name: Show env keys
+        run: |
+          cat .env | sed 's/=.*/=*** /'
+
+
+      - name: Login Aliyun ACR
+        uses: docker/login-action@v3
+        with:
+          registry: crpi-p67sy5t6k9nsmste.cn-hangzhou.personal.cr.aliyuncs.com
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+
+      - name: Build image
+        run: |
+          docker build \
+            -t $IMAGE:${GITHUB_REF_NAME} \
+            -t $IMAGE:latest .
+
+
+      - name: Push image
+        run: |
+          docker push $IMAGE:${GITHUB_REF_NAME}
+          docker push $IMAGE:latest
