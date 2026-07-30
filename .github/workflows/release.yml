@@ -79,3 +79,18 @@ jobs:
         run: |
           docker push $IMAGE:${GITHUB_REF_NAME}
           docker push $IMAGE:latest
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+
+
+      - name: Deploy
+        run: |
+          kubectl set image deployment/home \
+            home=$IMAGE:${GITHUB_REF_NAME} \
+            -n your-namespace
+
+          kubectl rollout status deployment/home \
+            -n your-namespace
