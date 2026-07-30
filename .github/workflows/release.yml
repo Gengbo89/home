@@ -80,17 +80,22 @@ jobs:
           docker push $IMAGE:${GITHUB_REF_NAME}
           docker push $IMAGE:latest
 
-      - name: Setup kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+      - name: Deploy to k3s
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.K3S_HOST }}
+          port: ${{ secrets.K3S_PORT }}
+          username: ${{ secrets.K3S_USER }}
+          key: ${{ secrets.K3S_SSH_KEY }}
 
+          script: |
+            IMAGE="gengbo/home:${{ github.ref_name }}"
 
-      - name: Deploy
-        run: |
-          kubectl set image deployment/home \
-            home=$IMAGE:${GITHUB_REF_NAME} \
-            -n dev
+            echo "Deploy image: ${IMAGE}"
 
-          kubectl rollout status deployment/home \
-            -n dev
+            kubectl set image deployment/home \
+              home=${IMAGE} \
+              -n dev
+
+            kubectl rollout status deployment/home \
+              -n dev
