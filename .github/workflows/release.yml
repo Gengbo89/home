@@ -90,7 +90,7 @@ jobs:
         run: |
           kubectl set image deployment/home \
             home=$IMAGE:${GITHUB_REF_NAME} \
-            -n your-namespace
+            -n dev
 
           kubectl rollout status deployment/home \
-            -n your-namespace
+            -n dev
