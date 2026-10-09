@@ -5,6 +5,11 @@
     "link": "https://blog.gengbo.top/"
   },
   {
+    "icon": "Fire",
+    "name": "热点矩阵",
+    "link": "https://dailyhot.gengbo.top/"
+  },
+  {
     "icon": "Compass",
     "name": "n8n工作流",
     "link": "https://n8n.gengbo.top/"
