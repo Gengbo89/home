@@ -5,6 +5,11 @@
     "link": "https://blog.gengbo.top/"
   },
   {
+    "icon": "City",
+    "name": "微缩武汉",
+    "link": "https://wuhan.gengbo.top/"
+  },
+  {
     "icon": "Fire",
     "name": "热点矩阵",
     "link": "https://dailyhot.gengbo.top/"
@@ -33,11 +38,6 @@
     "icon": "Document",
     "name": "文档",
     "link": "https://docs.gengbo.top"
-  },
-  {
-    "icon": "City",
-    "name": "微缩武汉",
-    "link": "https://wuhan.gengbo.top/"
   },
   {
     "icon": "CompactDisc",
