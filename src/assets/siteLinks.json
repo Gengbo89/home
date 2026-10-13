@@ -35,6 +35,11 @@
     "link": "https://docs.gengbo.top"
   },
   {
+    "icon": "City",
+    "name": "微缩武汉",
+    "link": "https://wuhan.gengbo.top/"
+  },
+  {
     "icon": "CompactDisc",
     "name": "音乐api",
     "link": "https://api.gengbo.top/meting-api/api?type=playlist&id=942786593"
