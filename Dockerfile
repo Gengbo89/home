@@ -34,4 +34,5 @@ COPY --from=builder /app/dist ./dist
 EXPOSE 80
 
 # -g：存在预压缩的 .gz 文件时优先返回，配合 vite-plugin-compression 减小传输体积
-CMD ["http-server", "dist", "-p", "80", "-g"]
+# -c-1：关掉 http-server 默认的 1 小时强缓存，避免发布后浏览器仍复用旧 index.html（带 hash 的资源与 PWA 预缓存不受影响）
+CMD ["http-server", "dist", "-p", "80", "-g", "-c-1"]
