@@ -86,42 +86,39 @@ const listHeight = computed(() => {
 // 初始化播放器
 onMounted(() => {
   nextTick(() => {
-    try {
-      getPlayerList(props.songServer, props.songType, props.songId).then((res) => {
-        console.log(res);
-        // 更改播放器加载状态
-        store.musicIsOk = true;
+    getPlayerList(props.songServer, props.songType, props.songId)
+      .then((res) => {
         // 生成歌单
         playList.value = res;
-        console.log("音乐加载完成");
-        console.log(playList.value);
-        console.log(playIndex.value, playList.value.length, props.volume);
+        // 更改播放器加载状态
+        store.musicIsOk = true;
+      })
+      .catch((err) => {
+        // then 内部的异常不会被外层 try/catch 捕获，这里必须单独处理
+        console.error("播放器加载失败：", err);
+        store.musicIsOk = false;
+        ElMessage({
+          message: err?.message || "播放器加载失败",
+          grouping: true,
+          icon: h(PlayWrong, {
+            theme: "filled",
+            fill: "#efefef",
+          }),
+        });
       });
-    } catch (err) {
-      console.error(err);
-      store.musicIsOk = false;
-      ElMessage({
-        message: "播放器加载失败",
-        grouping: true,
-        icon: h(PlayWrong, {
-          theme: "filled",
-          fill: "#efefef",
-        }),
-      });
-    }
   });
 });
 
 // 播放
 const onPlay = () => {
-  console.log("播放");
   playIndex.value = player.value.aplayer.index;
   // 播放状态
   store.setPlayerState(player.value.audioRef.paused);
   // 储存播放器信息
-  store.setPlayerData(playList.value[playIndex.value].name, playList.value[playIndex.value].artist);
+  const current = playList.value[playIndex.value] || {};
+  store.setPlayerData(current.name, current.artist);
   ElMessage({
-    message: store.getPlayerData.name + " - " + store.getPlayerData.artist,
+    message: [store.getPlayerData.name, store.getPlayerData.artist].filter(Boolean).join(" - "),
     grouping: true,
     icon: h(MusicOne, {
       theme: "filled",
@@ -153,48 +150,72 @@ const onTimeUp = () => {
 
 // 切换播放暂停事件
 const playToggle = () => {
-  player.value.toggle();
+  player.value?.toggle();
 };
 
 // 切换音量事件
 const changeVolume = (value) => {
-  player.value.setVolume(value, false);
+  player.value?.setVolume(value, false);
 };
 
 // 切换上下曲
 const changeSong = (type) => {
+  if (!player.value) {
+    return;
+  }
   type === 0 ? player.value.skipBack() : player.value.skipForward();
   nextTick(() => {
-    player.value.play();
+    player.value?.play();
   });
 };
 
 // 切换歌曲列表状态
 const toggleList = () => {
-  player.value.toggleList();
+  player.value?.toggleList();
 };
 
 // 加载音频错误
 const loadMusicError = () => {
-  let notice = "";
-  if (playList.value.length > 1) {
-    notice = "播放歌曲出现错误，播放器将在 2s 后进行下一首";
-  } else {
-    notice = "播放歌曲出现错误";
-  }
+  const notice =
+    playList.value.length > 1
+      ? "播放歌曲出现错误，播放器将在 2s 后进行下一首"
+      : "播放歌曲出现错误";
   ElMessage({
     message: notice,
     grouping: true,
+    duration: 2000,
     icon: h(PlayWrong, {
       theme: "filled",
       fill: "#EFEFEF",
-      duration: 2000,
     }),
   });
-  console.error(
-    "播放歌曲: " + player.value.aplayer.audio[player.value.aplayer.index].name + " 出现错误",
-  );
+  const errorItem = player.value?.aplayer?.audio?.[player.value?.aplayer?.index];
+  console.error("播放歌曲: " + (errorItem?.name || "未知歌曲") + " 出现错误");
 };
+
+// 设置里的循环模式 / 随机播放需要实时同步给播放器实例
+// （vue-aplayer 并未监听这两个 prop，只在初始化时读取一次）
+watch(
+  () => store.playerLoop,
+  (value) => {
+    player.value?.setLoop(value);
+  },
+);
+
+watch(
+  () => store.playerOrder,
+  (value) => {
+    player.value?.setOrder(value);
+  },
+);
+
+// 播放器实例就绪后同步一次配置
+watch(player, (value) => {
+  if (value) {
+    value.setLoop(store.playerLoop);
+    value.setOrder(store.playerOrder);
+  }
+});
 
 // 暴露子组件方法
 defineExpose({ playToggle, changeVolume, changeSong, toggleList });

@@ -32,14 +32,19 @@ const bgUrl = ref(null);
 const imgTimeout = ref(null);
 const emit = defineEmits(["loadComplete"]);
 
-// 壁纸随机数
-// 请依据文件夹内的图片个数修改 Math.random() 后面的第一个数字
-const bgRandom = Math.floor(Math.random() * 10 + 1);
+// 本地壁纸编号（4、6、7、8、10 已删除，编号不连续，因此显式列出）
+const bgList = [1, 2, 3, 5, 9];
+const bgIndex = ref(Math.floor(Math.random() * bgList.length));
+
+// 壁纸全部加载失败时不再阻塞页面
+const bgFailed = ref(false);
+const bgErrorCount = ref(0);
+const bgMaxError = 3;
 
 // 更换壁纸链接
 const changeBg = (type) => {
   if (type == 0) {
-    bgUrl.value = `/images/background${bgRandom}.jpg`;
+    bgUrl.value = `/images/background${bgList[bgIndex.value]}.jpg`;
   } else if (type == 1) {
     bgUrl.value = "https://api.dujin.org/bing/1920.php";
   } else if (type == 2) {
@@ -51,6 +56,7 @@ const changeBg = (type) => {
 
 // 图片加载完成
 const imgLoadComplete = () => {
+  bgErrorCount.value = 0;
   imgTimeout.value = setTimeout(
     () => {
       store.setImgLoadStatus(true);
@@ -61,7 +67,6 @@ const imgLoadComplete = () => {
 
 // 图片动画完成
 const imgAnimationEnd = () => {
-  console.log("壁纸加载且动画完成");
   // 加载完成事件
   emit("loadComplete");
 };
@@ -69,6 +74,20 @@ const imgAnimationEnd = () => {
 // 图片显示失败
 const imgLoadError = () => {
   console.error("壁纸加载失败：", bgUrl.value);
+  bgErrorCount.value++;
+  // 多次失败后直接放行，避免一直卡在加载页
+  if (bgErrorCount.value > bgMaxError) {
+    bgFailed.value = true;
+    store.setImgLoadStatus(true);
+    ElMessage({
+      message: "壁纸加载失败，已使用默认背景",
+      icon: h(Error, {
+        theme: "filled",
+        fill: "#efefef",
+      }),
+    });
+    return;
+  }
   ElMessage({
     message: "壁纸加载失败，已临时切换回默认",
     icon: h(Error, {
@@ -76,13 +95,18 @@ const imgLoadError = () => {
       fill: "#efefef",
     }),
   });
-  bgUrl.value = `/images/background${bgRandom}.jpg`;
+  // 依次换一张不同的本地壁纸，保证地址变化才能重新触发 load 事件
+  bgIndex.value = (bgIndex.value + 1) % bgList.length;
+  bgUrl.value = `/images/background${bgList[bgIndex.value]}.jpg`;
 };
 
 // 监听壁纸切换
 watch(
   () => store.coverType,
   (value) => {
+    // 切换壁纸类型时重置失败计数，重新获得完整的重试机会
+    bgErrorCount.value = 0;
+    bgFailed.value = false;
     changeBg(value);
   },
 );

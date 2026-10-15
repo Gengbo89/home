@@ -2,15 +2,12 @@
   <div class="weather" v-if="weatherData.adCode.city && weatherData.weather.weather">
     <span>{{ weatherData.adCode.city }}&nbsp;</span>
     <span>{{ weatherData.weather.weather }}&nbsp;</span>
-    <span>{{ weatherData.weather.temperature }}℃</span>
-    <span class="sm-hidden">
-      &nbsp;{{
-        weatherData.weather.winddirection?.endsWith("风")
-          ? weatherData.weather.winddirection
-          : weatherData.weather.winddirection + "风"
-      }}&nbsp;
+    <span v-if="temperatureText">{{ temperatureText }}&nbsp;</span>
+    <span class="sm-hidden" v-if="windText">&nbsp;{{ windText }}&nbsp;</span>
+    <span class="sm-hidden" v-if="weatherData.weather.windpower">
+      {{ weatherData.weather.windpower }}&nbsp;级
     </span>
-    <span class="sm-hidden">{{ weatherData.weather.windpower }}&nbsp;级</span>
+
   </div>
   <div class="weather" v-else>
     <span>天气数据获取失败</span>
@@ -38,16 +35,29 @@ const weatherData = reactive({
   },
 });
 
+// 气温文案（接口缺失气温时不再显示 “null℃”）
+const temperatureText = computed(() => {
+  const temperature = weatherData.weather.temperature;
+  if (temperature === null || temperature === undefined || temperature === "") {
+    return "";
+  }
+  return `${temperature}℃`;
+});
+
+// 风向文案（接口缺失风向时不再显示 “undefined风”）
+const windText = computed(() => {
+  const direction = weatherData.weather.winddirection;
+  if (!direction) {
+    return "";
+  }
+  return direction.endsWith("风") ? direction : `${direction}风`;
+});
+
 // 取出天气平均值
 const getTemperature = (min, max) => {
-  try {
-    // 计算平均值并四舍五入
-    const average = (Number(min) + Number(max)) / 2;
-    return Math.round(average);
-  } catch (error) {
-    console.error("计算温度出现错误：", error);
-    return "NaN";
-  }
+  // Number(undefined) 不会抛错，而是返回 NaN，因此这里显式判断
+  const average = (Number(min) + Number(max)) / 2;
+  return Number.isFinite(average) ? Math.round(average) : null;
 };
 
 // 获取天气数据
@@ -55,10 +65,11 @@ const getWeatherData = async () => {
   try {
     // 获取地理位置信息
     if (!mainKey) {
-      console.log("未配置，使用备用天气接口");
       const result = await getOtherWeather();
-      console.log(result);
-      const data = result.result;
+      const data = result?.result;
+      if (!data?.city || !data?.condition) {
+        throw new Error("备用天气接口返回数据异常");
+      }
       weatherData.adCode = {
         city: data.city.City || "未知地区",
         // adcode: data.city.cityId,
@@ -72,31 +83,35 @@ const getWeatherData = async () => {
     } else {
       // 获取 Adcode
       const adCode = await getAdcode(mainKey);
-      console.log(adCode);
-      if (adCode.infocode !== "10000") {
-        throw "地区查询失败";
+      // 无法定位城市时高德会返回空数组或空字符串，这里统一判断
+      const city = typeof adCode.city === "string" ? adCode.city.trim() : "";
+      if (adCode.infocode !== "10000" || !city) {
+        throw new Error("地区查询失败");
       }
       weatherData.adCode = {
-        city: adCode.city,
+        city,
         adcode: adCode.adcode,
       };
       // 获取天气信息
       const result = await getWeather(mainKey, weatherData.adCode.adcode);
+      const live = result?.lives?.[0];
+      if (!live) {
+        throw new Error("天气信息获取失败");
+      }
       weatherData.weather = {
-        weather: result.lives[0].weather,
-        temperature: result.lives[0].temperature,
-        winddirection: result.lives[0].winddirection,
-        windpower: result.lives[0].windpower,
+        weather: live.weather,
+        temperature: live.temperature,
+        winddirection: live.winddirection,
+        windpower: live.windpower,
       };
     }
   } catch (error) {
-    console.error("天气信息获取失败:" + error);
-    onError("天气信息获取失败");
+    onError("天气信息获取失败", error);
   }
 };
 
 // 报错信息
-const onError = (message) => {
+const onError = (message, error) => {
   ElMessage({
     message,
     icon: h(Error, {
@@ -104,7 +119,7 @@ const onError = (message) => {
       fill: "#efefef",
     }),
   });
-  console.error(message);
+  console.error(message, error ?? "");
 };
 
 onMounted(() => {

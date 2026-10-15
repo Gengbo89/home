@@ -99,47 +99,66 @@ const playerData = reactive({
 // 开启播放列表
 const openMusicList = () => {
   musicListShow.value = true;
-  playerRef.value.toggleList();
+  playerRef.value?.toggleList();
 };
 
 // 关闭播放列表
 const closeMusicList = () => {
   musicListShow.value = false;
-  playerRef.value.toggleList();
+  playerRef.value?.toggleList();
 };
 
 // 音乐播放暂停
 const changePlayState = () => {
-  playerRef.value.playToggle();
+  playerRef.value?.playToggle();
 };
 
 // 音乐上下曲
 const changeMusicIndex = (type) => {
-  playerRef.value.changeSong(type);
+  playerRef.value?.changeSong(type);
+};
+
+// 判断事件是否来自可交互元素，避免空格键干扰表单控件
+const isInteractiveTarget = (target) => {
+  if (!target || typeof target.closest !== "function") {
+    return false;
+  }
+  if (target.isContentEditable) {
+    return true;
+  }
+  return !!target.closest(
+    "input, textarea, select, button, a, .el-switch, .el-radio, .el-checkbox, .el-slider, .el-collapse-item__header",
+  );
+};
+
+// 空格键事件
+const handleKeydown = (e) => {
+  if (!store.musicIsOk || e.repeat || e.code !== "Space") {
+    return;
+  }
+  // 正在操作设置面板等控件时不响应
+  if (isInteractiveTarget(e.target)) {
+    return;
+  }
+  changePlayState();
 };
 
 onMounted(() => {
-  // 空格键事件
-  window.addEventListener("keydown", (e) => {
-    if (!store.musicIsOk) {
-      return;
-    }
-    if (e.code == "Space") {
-      changePlayState();
-    }
-  });
+  window.addEventListener("keydown", handleKeydown);
   // 挂载方法至 window
   window.$openList = openMusicList;
 });
 
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeydown);
+  delete window.$openList;
+});
+
 // 监听音量变化
-watch(
-  () => volumeNum.value,
-  (value) => {
-    store.musicVolume = value;
-    playerRef.value.changeVolume(store.musicVolume);
-  },
-);
+watch(volumeNum, (value) => {
+  store.setMusicVolume(value);
+  playerRef.value?.changeVolume(value);
+});
 </script>
 
 <style lang="scss" scoped>

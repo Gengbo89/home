@@ -9,7 +9,8 @@ export const mainStore = defineStore("main", {
       siteStartShow: false, // 建站日期显示
       musicClick: false, // 音乐链接是否跳转
       musicIsOk: false, // 音乐是否加载完成
-      musicVolume: 0, // 音乐音量;
+      musicVolume: null, // 音乐音量（null 表示未设置，使用播放器默认值；0 表示静音）
+      musicVolumeVersion: 2, // 音量数据版本，用于兼容旧数据（见 persist.serializer）
       musicOpenState: false, // 音乐面板开启状态
       backgroundShow: false, // 壁纸展示状态
       boxOpenState: false, // 盒子开启状态
@@ -74,6 +75,10 @@ export const mainStore = defineStore("main", {
     setImgLoadStatus(value) {
       this.imgLoadStatus = value;
     },
+    // 更改音乐音量（0 为静音，null 表示未设置）
+    setMusicVolume(value) {
+      this.musicVolume = value;
+    },
   },
   persist: {
     key: "data",
@@ -81,6 +86,7 @@ export const mainStore = defineStore("main", {
     paths: [
       "coverType",
       "musicVolume",
+      "musicVolumeVersion",
       "siteStartShow",
       "musicClick",
       "playerLrcShow",
@@ -89,5 +95,25 @@ export const mainStore = defineStore("main", {
       "playerLoop",
       "playerOrder",
     ],
+    // 兼容旧数据：旧版本用 0 表示“未设置音量”，与“静音”无法区分，
+    // 这里在读取时统一迁移为 null，避免老用户升级后播放器静音
+    serializer: {
+      serialize: JSON.stringify,
+      deserialize: (value) => {
+        let data;
+        try {
+          data = JSON.parse(value);
+        } catch {
+          return {};
+        }
+        if (data && typeof data === "object" && data.musicVolumeVersion !== 2) {
+          if (data.musicVolume === 0) {
+            data.musicVolume = null;
+          }
+          data.musicVolumeVersion = 2;
+        }
+        return data;
+      },
+    },
   },
 });

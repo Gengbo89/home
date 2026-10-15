@@ -38,10 +38,23 @@ const startDate = ref(import.meta.env.VITE_SITE_START);
 const startDateText = ref(null);
 const timeInterval = ref(null);
 
+// 计算建站日期文案（配置缺失或日期非法时不显示）
+const updateStartDateText = () => {
+  if (!startDate.value) {
+    startDateText.value = null;
+    return;
+  }
+  const date = new Date(startDate.value);
+  startDateText.value = Number.isNaN(date.getTime()) ? null : siteDateStatistics(date);
+};
+
+// 首次立即计算，避免建站日期出现一秒空白
+updateStartDateText();
+
 onMounted(() => {
   timeInterval.value = setInterval(() => {
     timeData.value = getTimeCapsule();
-    if (startDate.value) startDateText.value = siteDateStatistics(new Date(startDate.value));
+    updateStartDateText();
   }, 1000);
 });
 
