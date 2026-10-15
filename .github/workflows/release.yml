@@ -9,7 +9,30 @@ env:
   IMAGE: crpi-p67sy5t6k9nsmste.cn-hangzhou.personal.cr.aliyuncs.com/gengbo/home
 
 jobs:
+  # 只允许 master 分支上的提交被构建/部署：
+  # tag 可以打在任意分支上，这里强制校验 tag 指向的提交已经在 master 上，否则直接失败退出。
+  guard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag is on master
+        run: |
+          git fetch --no-tags origin +refs/heads/master:refs/remotes/origin/master
+
+          if git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "OK: tag ${GITHUB_REF_NAME} (${GITHUB_SHA}) is on master"
+          else
+            echo "::error::tag ${GITHUB_REF_NAME} points at ${GITHUB_SHA}, which is not on master; refusing to build"
+            exit 1
+          fi
+
   build:
+    needs: guard
     runs-on: ubuntu-latest
 
     steps:
