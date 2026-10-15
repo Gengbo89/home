@@ -3,11 +3,11 @@
     v-if="playList[0]"
     ref="player"
     :audio="playList"
-    :autoplay="store.playerAutoplay"
+    :autoplay="false"
     :theme="theme"
     :autoSwitch="false"
-    :loop="store.playerLoop"
-    :order="store.playerOrder"
+    :loop="'all'"
+    :order="'list'"
     :volume="volume"
     :showLrc="true"
     :listFolded="listFolded"
@@ -192,30 +192,6 @@ const loadMusicError = () => {
   const errorItem = player.value?.aplayer?.audio?.[player.value?.aplayer?.index];
   console.error("播放歌曲: " + (errorItem?.name || "未知歌曲") + " 出现错误");
 };
-
-// 设置里的循环模式 / 随机播放需要实时同步给播放器实例
-// （vue-aplayer 并未监听这两个 prop，只在初始化时读取一次）
-watch(
-  () => store.playerLoop,
-  (value) => {
-    player.value?.setLoop(value);
-  },
-);
-
-watch(
-  () => store.playerOrder,
-  (value) => {
-    player.value?.setOrder(value);
-  },
-);
-
-// 播放器实例就绪后同步一次配置
-watch(player, (value) => {
-  if (value) {
-    value.setLoop(store.playerLoop);
-    value.setOrder(store.playerOrder);
-  }
-});
 
 // 暴露子组件方法
 defineExpose({ playToggle, changeVolume, changeSong, toggleList });

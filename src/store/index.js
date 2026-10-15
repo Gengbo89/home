@@ -5,9 +5,6 @@ export const mainStore = defineStore("main", {
     return {
       imgLoadStatus: false, // 壁纸加载状态
       innerWidth: null, // 当前窗口宽度
-      coverType: "0", // 壁纸种类
-      siteStartShow: false, // 建站日期显示
-      musicClick: false, // 音乐链接是否跳转
       musicIsOk: false, // 音乐是否加载完成
       musicVolume: null, // 音乐音量（null 表示未设置，使用播放器默认值；0 表示静音）
       musicVolumeVersion: 2, // 音量数据版本，用于兼容旧数据（见 persist.serializer）
@@ -16,16 +13,10 @@ export const mainStore = defineStore("main", {
       boxOpenState: false, // 盒子开启状态
       mobileOpenState: false, // 移动端开启状态
       mobileFuncState: false, // 移动端功能区开启状态
-      setOpenState: false, // 设置页面开启状态
       playerState: false, // 当前播放状态
       playerTitle: null, // 当前播放歌曲名
       playerArtist: null, // 当前播放歌手名
       playerLrc: "歌词加载中", // 当前播放歌词
-      playerLrcShow: true, // 是否显示底栏歌词
-      footerBlur: true, // 底栏模糊
-      playerAutoplay: false, // 是否自动播放
-      playerLoop: "all", // 循环播放 "all", "one", "none"
-      playerOrder: "list", // 循环顺序 "list", "random"
     };
   },
   getters: {
@@ -83,18 +74,7 @@ export const mainStore = defineStore("main", {
   persist: {
     key: "data",
     storage: window.localStorage,
-    paths: [
-      "coverType",
-      "musicVolume",
-      "musicVolumeVersion",
-      "siteStartShow",
-      "musicClick",
-      "playerLrcShow",
-      "footerBlur",
-      "playerAutoplay",
-      "playerLoop",
-      "playerOrder",
-    ],
+    paths: ["musicVolume", "musicVolumeVersion"],
     // 兼容旧数据：旧版本用 0 表示“未设置音量”，与“静音”无法区分，
     // 这里在读取时统一迁移为 null，避免老用户升级后播放器静音
     serializer: {

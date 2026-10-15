@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import { defineConfig, loadEnv } from "vite";
 import { ElementPlusResolver } from "unplugin-vue-components/resolvers";
+import { existsSync, readdirSync } from "node:fs";
 import { resolve } from "path";
 import { VitePWA } from "vite-plugin-pwa";
 import vue from "@vitejs/plugin-vue";
@@ -45,12 +46,56 @@ function htmlEnvFallback() {
   };
 }
 
+// 构建期扫描 public/images 目录下的本地壁纸，暴露为 virtual:backgrounds 模块。
+// 以后增删壁纸图片只需改动目录，不用再同步修改代码里的文件名列表。
+function localBackgrounds() {
+  const virtualId = "virtual:backgrounds";
+  const resolvedId = "\0" + virtualId;
+  const imageRe = /\.(jpe?g|png|webp|avif|gif)$/i;
+  let root = process.cwd();
+
+  const scan = () => {
+    const dir = resolve(root, "public/images");
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((file) => file.startsWith("background") && imageRe.test(file))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((file) => `/images/${file}`);
+  };
+
+  return {
+    name: "local-backgrounds",
+    configResolved(config) {
+      root = config.root;
+    },
+    resolveId(id) {
+      return id === virtualId ? resolvedId : null;
+    },
+    load(id) {
+      return id === resolvedId ? `export default ${JSON.stringify(scan())};` : null;
+    },
+    configureServer(server) {
+      const dir = resolve(root, "public/images");
+      server.watcher.add(dir);
+      const onFileChange = (file) => {
+        if (!file.startsWith(dir) || !imageRe.test(file)) return;
+        const mod = server.moduleGraph.getModuleById(resolvedId);
+        if (mod) server.moduleGraph.invalidateModule(mod);
+        server.ws.send({ type: "full-reload" });
+      };
+      server.watcher.on("add", onFileChange);
+      server.watcher.on("unlink", onFileChange);
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default ({ mode }) =>
   defineConfig({
     plugins: [
       vue(),
       htmlEnvFallback(),
+      localBackgrounds(),
       AutoImport({
         imports: ["vue"],
         resolvers: [ElementPlusResolver()],

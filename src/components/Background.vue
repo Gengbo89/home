@@ -11,12 +11,7 @@
     />
     <div :class="store.backgroundShow ? 'gray hidden' : 'gray'" />
     <Transition name="fade" mode="out-in">
-      <a
-        v-if="store.backgroundShow && store.coverType != '3'"
-        class="down"
-        :href="bgUrl"
-        target="_blank"
-      >
+      <a v-if="store.backgroundShow && bgUrl" class="down" :href="bgUrl" target="_blank">
         下载壁纸
       </a>
     </Transition>
@@ -26,32 +21,28 @@
 <script setup>
 import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
+// 本地壁纸清单由构建期扫描 public/images 目录生成（见 vite.config.js 的 localBackgrounds 插件），
+// 以后增删壁纸图片只需改动目录，无需修改这里的文件名列表。
+import bgList from "virtual:backgrounds";
 
 const store = mainStore();
 const bgUrl = ref(null);
 const imgTimeout = ref(null);
 const emit = defineEmits(["loadComplete"]);
 
-// 本地壁纸编号（4、6、7、8、10 已删除，编号不连续，因此显式列出）
-const bgList = [1, 2, 3, 5, 9];
-const bgIndex = ref(Math.floor(Math.random() * bgList.length));
-
-// 壁纸全部加载失败时不再阻塞页面
-const bgFailed = ref(false);
+// 连续加载失败次数，超过上限后放行，避免一直卡在加载页
 const bgErrorCount = ref(0);
 const bgMaxError = 3;
 
-// 更换壁纸链接
-const changeBg = (type) => {
-  if (type == 0) {
-    bgUrl.value = `/images/background${bgList[bgIndex.value]}.jpg`;
-  } else if (type == 1) {
-    bgUrl.value = "https://api.dujin.org/bing/1920.php";
-  } else if (type == 2) {
-    bgUrl.value = "https://api.vvhan.com/api/wallpaper/views";
-  } else if (type == 3) {
-    bgUrl.value = "https://api.vvhan.com/api/wallpaper/acg";
+// 随机取一张本地壁纸（尽量不与当前这张重复）
+const randomBg = () => {
+  if (!bgList.length) return "";
+  if (bgList.length === 1) return bgList[0];
+  let next = bgUrl.value;
+  while (next === bgUrl.value) {
+    next = bgList[Math.floor(Math.random() * bgList.length)];
   }
+  return next;
 };
 
 // 图片加载完成
@@ -77,7 +68,6 @@ const imgLoadError = () => {
   bgErrorCount.value++;
   // 多次失败后直接放行，避免一直卡在加载页
   if (bgErrorCount.value > bgMaxError) {
-    bgFailed.value = true;
     store.setImgLoadStatus(true);
     ElMessage({
       message: "壁纸加载失败，已使用默认背景",
@@ -95,25 +85,17 @@ const imgLoadError = () => {
       fill: "#efefef",
     }),
   });
-  // 依次换一张不同的本地壁纸，保证地址变化才能重新触发 load 事件
-  bgIndex.value = (bgIndex.value + 1) % bgList.length;
-  bgUrl.value = `/images/background${bgList[bgIndex.value]}.jpg`;
+  // 换一张不同的本地壁纸，地址变化才能重新触发 load 事件
+  bgUrl.value = randomBg();
 };
 
-// 监听壁纸切换
-watch(
-  () => store.coverType,
-  (value) => {
-    // 切换壁纸类型时重置失败计数，重新获得完整的重试机会
-    bgErrorCount.value = 0;
-    bgFailed.value = false;
-    changeBg(value);
-  },
-);
-
 onMounted(() => {
-  // 加载壁纸
-  changeBg(store.coverType);
+  // 没有任何本地壁纸时直接放行，避免卡在加载页
+  if (!bgList.length) {
+    store.setImgLoadStatus(true);
+    return;
+  }
+  bgUrl.value = randomBg();
 });
 
 onBeforeUnmount(() => {

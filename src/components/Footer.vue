@@ -1,7 +1,7 @@
 <template>
-  <footer id="footer" :class="store.footerBlur ? 'blur' : null">
+  <footer id="footer" class="blur">
     <Transition name="fade" mode="out-in">
-      <div v-if="!store.playerState || !store.playerLrcShow" class="power">
+      <div v-if="!store.playerState" class="power">
         <span>
           <span :class="showStartYear ? 'c-hidden' : 'hidden'">Copyright&nbsp;</span>
           &copy;
